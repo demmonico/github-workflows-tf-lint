@@ -1,25 +1,9 @@
-name: TF tests
-on:
-  workflow_call: # Indicates that this is a reusable workflow
+name: Terraform tflint
+description: Runs a Terraform tflint checks
 
-jobs:
-  tf_fmt:
-    name: Terraform Format check
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: terraform fmt
-        uses: dflook/terraform-fmt-check@v1
-
-
-  tf_lint:
-    name: Terraform Lint
-    runs-on: ubuntu-latest
-
-    steps:
+runs:
+  using: "composite"
+  steps:
       - uses: actions/checkout@v4
         name: Checkout source code
 
@@ -62,15 +46,3 @@ jobs:
       - name: Run TFLint
         run: |
           tflint --recursive --config=${PWD}/.tflint.hcl
-
-
-  tf_validate:
-    name: Terraform Validate
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: terraform validate
-        uses: dflook/terraform-validate@v1
