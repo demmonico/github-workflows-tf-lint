@@ -1,0 +1,76 @@
+name: TF tests
+on:
+  workflow_call: # Indicates that this is a reusable workflow
+
+jobs:
+  tf_fmt:
+    name: Terraform Format check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: terraform fmt
+        uses: dflook/terraform-fmt-check@v1
+
+
+  tf_lint:
+    name: Terraform Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout source code
+
+      - uses: actions/cache@v4
+        name: Cache plugin dir
+        with:
+          path: ~/.tflint.d/plugins
+          key: tflint-${{ hashFiles('.tflint.hcl') }}
+
+      - uses: terraform-linters/setup-tflint@v4
+        name: Setup TFLint
+        with:
+          tflint_version: ${{ env.TFLINT_VERSION || 'v0.52.0' }}
+      - name: Show version
+        run: tflint --version
+
+      - name: Init TFLint
+        run: |
+          if [ ! -f .tflint.hcl ]; then echo -e "${TFLINT_CONFIG}" > .tflint.hcl; fi
+          tflint --init --config=${PWD}/.tflint.hcl
+        env:
+          # https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/plugins.md#avoiding-rate-limiting
+          GITHUB_TOKEN: ${{ github.token }}
+          TFLINT_CONFIG: |
+            config {
+              format = "checkstyle"
+            }
+            
+            plugin "terraform" {
+              enabled = true
+              preset  = "recommended"
+            }
+            
+            plugin "aws" {
+              enabled = true
+              version = "0.37.0"
+              source  = "github.com/terraform-linters/tflint-ruleset-aws"
+            }
+
+      - name: Run TFLint
+        run: |
+          tflint --recursive --config=${PWD}/.tflint.hcl
+
+
+  tf_validate:
+    name: Terraform Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: terraform validate
+        uses: dflook/terraform-validate@v1
