@@ -1,6 +1,11 @@
 name: Terraform tflint
 description: Runs a Terraform tflint checks
 
+inputs:
+  tflint-version:
+    required: false
+    default: 'v0.52.0'
+
 runs:
   using: "composite"
   steps:
@@ -16,7 +21,7 @@ runs:
       - uses: terraform-linters/setup-tflint@v4
         name: Setup TFLint
         with:
-          tflint_version: ${{ env.TFLINT_VERSION || 'v0.52.0' }}
+          tflint_version: ${{ inputs.tflint-version }}
       - name: Show version
         run: tflint --version
 
@@ -25,8 +30,6 @@ runs:
           if [ ! -f .tflint.hcl ]; then echo -e "${TFLINT_CONFIG}" > .tflint.hcl; fi
           tflint --init --config=${PWD}/.tflint.hcl
         env:
-          # https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/plugins.md#avoiding-rate-limiting
-          GITHUB_TOKEN: ${{ github.token }}
           TFLINT_CONFIG: |
             config {
               format = "checkstyle"
